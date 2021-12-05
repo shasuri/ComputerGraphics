@@ -1,0 +1,206 @@
+<doctype html>
+<html>
+<head>
+<title>201724539 이재욱</title>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+	attribute vec3 pos;
+	attribute vec4 clr;
+	
+	uniform mat4 worldMat;
+	uniform mat4 viewMat, projMat;
+	
+	varying vec4 vcolor;
+	
+	void main()
+	{
+		gl_Position =  projMat * viewMat * worldMat * vec4(pos,1);
+		vcolor = clr;
+	}
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+	precision mediump float;
+
+	varying vec4 vcolor;
+
+	void main()
+	{
+		gl_FragColor = vcolor;
+	}
+</script>
+
+
+<!-- Added to use utilities -->
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/webgl-debug.js"></script>
+<script src="../lib/cuon-utils.js"></script>
+<script src="../lib/cuon-matrix.js"></script>
+<script src="../lib/cuon-matrix.js"></script>
+
+
+<script type="text/javascript">
+window.onload = function()
+{
+	// Initialize WebGL
+	canvas = document.getElementById("mycanvas");
+	gl = canvas.getContext("webgl");
+
+	// Set the output resolution and viewport
+
+	gl.viewport(0, 0, canvas.width, canvas.height);
+
+	// Initialize other WebGL states
+	gl.clearColor(1, 1, 1, 0);
+	gl.lineWidth(1.0);	// we are not really drawing lines in this example, so this command is totally unnecessary.
+	
+	
+	///////////////////////////////////////////////////////////////////////
+	// Initialize the vertex buffer objects
+
+	
+	var positions = [
+		-0.4,  0.4, -0.1,
+		 0.4,  0.4, -0.1,
+		 0.4, -0.4, -0.1,
+		-0.4,  0.4, 0,
+		 0.4, -0.4, 0,
+		-0.4, -0.4, 0
+		];
+
+	var colors = [
+		1, 0, 0, 1,
+		0, 1, 0, 1,
+		0, 0, 1, 1,
+		1, 0, 0, 1,
+		0, 0, 1, 1,
+		1, 0, 1, 1
+		];
+	
+	var position_buffer = gl.createBuffer();
+
+	gl.bindBuffer(
+		gl.ARRAY_BUFFER, 
+		position_buffer );
+
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array(positions),
+		gl.STATIC_DRAW );
+
+	var color_buffer = gl.createBuffer();
+
+	gl.bindBuffer(
+		gl.ARRAY_BUFFER, 
+		color_buffer );
+
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array(colors),
+		gl.STATIC_DRAW );
+	
+	
+	///////////////////////////////////////////////////////////////////////
+	// Compile the vertex and fragment shaders into a program
+
+	const vs_source = document.getElementById('vertexShader').text;
+	
+	const vs = gl.createShader(gl.VERTEX_SHADER);
+	gl.shaderSource(vs, vs_source);
+	gl.compileShader(vs);
+
+	if ( ! gl.getShaderParameter(vs, gl.COMPILE_STATUS) ) {
+		alert( gl.getShaderInfoLog(vs) );
+		gl.deleteShader(vs);
+	}
+
+	const fs_source = document.getElementById('fragmentShader').text;
+
+	const fs = gl.createShader(gl.FRAGMENT_SHADER);
+	gl.shaderSource(fs, fs_source);
+	gl.compileShader(fs);
+
+	if ( ! gl.getShaderParameter(fs, gl.COMPILE_STATUS) ) {
+		alert( gl.getShaderInfoLog(fs) );
+		gl.deleteShader(fs);
+	}
+	
+	prog = gl.createProgram();
+	gl.attachShader(prog, vs);
+	gl.attachShader(prog, fs);
+	gl.linkProgram(prog);
+
+	if ( ! gl.getProgramParameter(prog, gl.LINK_STATUS) ) {
+		alert( gl.getProgramInfoLog(prog) );
+	}
+	
+	
+	///////////////////////////////////////////////////////////////////////
+	// Update shader uniform variables
+
+	var w = gl.getUniformLocation(prog,'worldMat');
+	var worldMatrix = [
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1 ];
+	
+	var p = gl.getUniformLocation(prog,'projMat');
+	var	projMatrix = new Matrix4();
+	projMatrix.setPerspective(90,1,1,100);
+	console.log("Projection matrix : ");
+	console.log(projMatrix);
+	projMatrix = projMatrix.elements;
+
+	var v = gl.getUniformLocation(prog,'viewMat');
+	var viewMatrix = new Matrix4();
+	viewMatrix.setLookAt(0, 1, 1, 0, 0, 0, 0, 1, 0);
+	console.log("View matrix : ");
+	console.log(viewMatrix);
+	viewMatrix = viewMatrix.elements;
+
+	gl.useProgram(prog);
+
+	gl.uniformMatrix4fv( w, false, worldMatrix );
+	
+	gl.uniformMatrix4fv( p, false, projMatrix );
+
+	gl.uniformMatrix4fv( v, false, viewMatrix );
+	
+	
+	///////////////////////////////////////////////////////////////////////
+	// Set the vertex buffers used for rendering
+
+	var p = gl.getAttribLocation(prog, 'pos');
+	gl.bindBuffer(gl.ARRAY_BUFFER, position_buffer);
+	gl.vertexAttribPointer(p, 3, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(p);
+
+	var c = gl.getAttribLocation(prog, 'clr');
+	gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+	gl.vertexAttribPointer(c, 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(c);
+
+
+	///////////////////////////////////////////////////////////////////////
+	// Render the scene
+
+	gl.clear( gl.COLOR_BUFFER_BIT );
+	gl.useProgram( prog );
+	gl.drawArrays( gl.TRIANGLES, 0, 6 );
+}
+</script>
+<style>
+#mycanvas {
+	 width: 500px;
+	height: 500px; 
+	margin: auto;
+	display: block;
+	border: 1px solid black;
+}
+</style>
+</head>
+<body>
+<canvas id="mycanvas"></canvas>
+</body>
+</html>
