@@ -52,6 +52,8 @@ function main()
 	//  v2------v3
 
     var positions = new Float32Array([   // Vertex coordinates
+		// x, z, y
+
     	// v0-v5-v6-v1 up
     	 1.0, 1.0, 1.0, //v0 1,0 
     	 1.0, 1.0,-1.0, //v5 1,1
@@ -63,23 +65,72 @@ function main()
     	-1.0, 1.0, 1.0, //v1 0,1
     	-1.0,-1.0, 1.0, //v2 0,0
     	 1.0,-1.0, 1.0, //v3 1,0
+
+		// v0-v3-v4-v5 right
+		 1.0, 1.0, 1.0, //v0 1,0
+		 1.0,-1.0, 1.0, //v3 0,0 
+    	 1.0,-1.0,-1.0, //v4 0,1
+		 1.0, 1.0,-1.0, //v5 1,1
+
+		// v4-v7-v6-v5 back
+		 1.0,-1.0,-1.0, //v4 0,0 
+    	-1.0,-1.0,-1.0, //v7 0,1
+		-1.0, 1.0,-1.0, //v6 1,1
+		 1.0, 1.0,-1.0, //v5 1,0
+		
+		// v4-v3-v2-v7 down
+		 1.0,-1.0,-1.0, //v4 1,0
+		 1.0,-1.0, 1.0, //v3 1,1
+		-1.0,-1.0, 1.0, //v2 0,1
+		-1.0,-1.0,-1.0, //v7 0,0 
+
+		// v7-v6-v1-v2 left
+		-1.0, 1.0, 1.0, //v1 1,1
+		-1.0, 1.0,-1.0, //v6 0,1
+		-1.0,-1.0,-1.0, //v7 0,0 
+		-1.0,-1.0, 1.0, //v2 1,0
+		 
 	]);
 	var texCoord = new Float32Array([
 		//up
-		1.0, 0.0, 
-		1.0, 1.0,
-		0.0, 1.0,
+		2.0, 0.0, 
+		2.0, 2.0,
+		0.0, 2.0,
 		0.0, 0.0,
 		//front
-		1.0, 1.0,
-		0.0, 1.0,
+		2.0, 2.0,
+		0.0, 2.0,
 		0.0, 0.0,
-		1.0, 0.0,
+		2.0, 0.0,
+		//right
+		0.0, 2.0,
+		0.0, 0.0,
+		2.0, 0.0,
+		2.0, 2.0,
+		//back
+		0.0, 0.0,
+		2.0, 0.0,
+		2.0, 2.0,
+		0.0, 2.0,
+		//down
+		2.0, 0.0,
+		2.0, 2.0,
+		0.0, 2.0,
+		0.0, 0.0,
+		//left
+		2.0, 2.0,
+		0.0, 2.0,
+		0.0, 0.0,
+		2.0, 0.0,
 	]);
 
   	var indices = new Uint16Array([       // Indices of the vertices
-    	 0, 1, 2,   0, 2, 3,    // up
-    	 4, 5, 6,   4, 6, 7,    // front
+    	 0, 1, 2,		0, 2, 3,	// up
+    	 4, 5, 6,		4, 6, 7,	// front
+		 8, 9, 10,		8, 10, 11,	// right
+		 12, 13, 14,	12, 14, 15,	// back
+		 16, 17, 18,	16, 18, 19,	// down
+		 20, 21, 22,    20, 22, 23  // left
   	]);
 
 	var position_buffer = gl.createBuffer();
@@ -109,20 +160,22 @@ function main()
 	var texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);  // Flip the image's y axis
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, 
 		document.getElementById('textureImg'));
 	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	
 
 	gl.useProgram(prog);
 	var wM = gl.getUniformLocation(prog,'worldMat');
 	var vM = gl.getUniformLocation(prog,'viewMat');
 	var pM = gl.getUniformLocation(prog,'projMat');
 
-	//var u_Sampler = gl.getUniformLocation(prog, 'sampler');
+	var u_Sampler = gl.getUniformLocation(prog, 'sampler');
 
 	var worldMatrix = new Matrix4();
 	var viewMatrix = new Matrix4();
@@ -146,7 +199,7 @@ function main()
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		gl.activeTexture(gl.TEXTURE0);
-		//gl.uniform1i(u_Sampler, 0);
+		gl.uniform1i(u_Sampler, 0);
 		gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 		requestAnimationFrame(loop);
 
